@@ -15,7 +15,6 @@ Which option would you like to choose:  """))
         username = input("What is your username? ")
         password = input("What is your chosen password? ")
         add_entry(site, username, password)
-        print("password added!")
 
     elif option == 2:
         u = input("What is the site's name: ")
@@ -39,6 +38,7 @@ def add_entry(site, username, password):
         if file.tell() == 0:
             writer.writeheader()
         writer.writerow({'site': site, 'username': username, 'password': password})
+    print("password added!")
 
 def get_entry(site):
     with open("passwords.csv", newline = "") as file:
@@ -46,23 +46,32 @@ def get_entry(site):
         for row in reader:
             if row["site"] == site:
                 print(row["password"])
+            else:
+                print("This site is not in your list of passwords.")
 
 def delete_entry(site):
     with open("passwords.csv", newline = "") as file:
         reader = csv.DictReader(file)
         rows = list(reader)
 
-    rows = [row for row in rows if row["site"] != site]
+        if site in rows:
+            rows = [row for row in rows if row["site"] != site]
 
-    with open("passwords.csv", "w", newline="") as file:
-        fieldnames = ["site", "username", "password"]
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+            with open("passwords.csv", "w", newline="") as file:
+                fieldnames = ["site", "username", "password"]
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
 
-        writer.writeheader()
-        writer.writerows(rows)
+                writer.writeheader()
+                writer.writerows(rows)
+            print("password deleted!")
+        else:
+            print("This site is not in your list of passwords.")
 
 def list_entries():
-    ...
+    with open("passwords.csv") as file:
+        reader = csv.DictReader(file)
+        print(list(reader))
+
 
 def generate_password(length, use_symbols=True):
     ...
