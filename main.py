@@ -18,7 +18,8 @@ Which option would you like to choose:  """))
         print("password added!")
 
     elif option == 2:
-        get_entry()
+        u = input("What is the site's name: ")
+        get_entry(u)
 
     elif option == 3:
         delete_entry()
@@ -31,14 +32,22 @@ Which option would you like to choose:  """))
     
 
 def add_entry(site, username, password):
-    with open("passwords.csv", "a") as file:
+    with open("passwords.csv", "a", newline="") as file:
         fieldnames = ["site", "username", "password"]
         writer = csv.DictWriter(file, fieldnames = fieldnames)
-        writer.writeheader()
+        if file.tell() == 0:
+            writer.writeheader()
         writer.writerow({'site': site, 'username': username, 'password': password})
 
 def get_entry(site):
-    ...
+    with open("passwords.csv", newline = "") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            if row["site"] == site:
+                print(row["password"])
+
+
+
 
 def delete_entry(site):
     ...
