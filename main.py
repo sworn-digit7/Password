@@ -22,7 +22,8 @@ Which option would you like to choose:  """))
         get_entry(u)
 
     elif option == 3:
-        delete_entry()
+        d = input("What is the site's name whose password you would like to delete: ")
+        delete_entry(d)
 
     elif option == 4:
         list_entries()
@@ -46,11 +47,19 @@ def get_entry(site):
             if row["site"] == site:
                 print(row["password"])
 
-
-
-
 def delete_entry(site):
-    ...
+    with open("passwords.csv", newline = "") as file:
+        reader = csv.DictReader(file)
+        rows = list(reader)
+
+    rows = [row for row in rows if row["site"] != site]
+
+    with open("passwords.csv", "w", newline="") as file:
+        fieldnames = ["site", "username", "password"]
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+        writer.writeheader()
+        writer.writerows(rows)
 
 def list_entries():
     ...
