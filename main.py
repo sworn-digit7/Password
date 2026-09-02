@@ -1,8 +1,35 @@
 import csv
 import string
 import secrets
+import hashlib
+import os
+
+MASTER_HASH = ""
+
+
+def setup_master_password():
+    pw = input("Create a master password: ")
+    hashed = hashlib.sha256(pw.encode()).hexdigest()
+    with open("master.txt", "w") as f:
+        f.write(hashed)
+
+def check_master_password():
+    with open("master.txt", "r") as f:
+        stored_hash = f.read().strip()
+
+    attempt = input("Enter master password: ")
+    attempt_hash = hashlib.sha256(attempt.encode()).hexdigest()
+
+    return attempt_hash == stored_hash
 
 def main():
+    
+    if not os.path.exists("master.txt"):
+        setup_master_password()
+
+    if not check_master_password():
+        print("Incorrect password.")
+        return
 
     while True:
         try:
