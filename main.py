@@ -1,35 +1,26 @@
 import csv
+import sys
 import string
 import secrets
 import hashlib
 import os
 
-MASTER_HASH = ""
-
-
-def setup_master_password():
-    pw = input("Create a master password: ")
-    hashed = hashlib.sha256(pw.encode()).hexdigest()
-    with open("master.txt", "w") as f:
-        f.write(hashed)
-
-def check_master_password():
-    with open("master.txt", "r") as f:
-        stored_hash = f.read().strip()
-
-    attempt = input("Enter master password: ")
-    attempt_hash = hashlib.sha256(attempt.encode()).hexdigest()
-
-    return attempt_hash == stored_hash
-
 def main():
-    
+
     if not os.path.exists("master.txt"):
         setup_master_password()
 
-    if not check_master_password():
-        print("Incorrect password.")
-        return
+    TRIALS = 0
+
+    while True:
+        if not check_master_password():
+            print("Incorrect password.")
+            TRIALS += 1
+            if TRIALS == 3:
+                sys.exit("Maximum number of attempts has been exhausted.")
+        else:
+            break
+        
 
     while True:
         try:
@@ -69,6 +60,21 @@ Which option would you like to choose:  """))
         except ValueError:
             print("Please choose options 1 to 6.")
 
+
+def setup_master_password():
+    pw = input("Create a master password: ")
+    hashed = hashlib.sha256(pw.encode()).hexdigest()
+    with open("master.txt", "w") as f:
+        f.write(hashed)
+
+def check_master_password():
+    with open("master.txt", "r") as f:
+        stored_hash = f.read().strip()
+
+    attempt = input("Enter master password: ")
+    attempt_hash = hashlib.sha256(attempt.encode()).hexdigest()
+
+    return attempt_hash == stored_hash
 
     
 def add_entry(site, username, password):
