@@ -7,11 +7,19 @@ import os
 import io
 import base64
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+
+FERNET = None  # set globally once the master password is verified
+
+
+def derive_key(password, salt):
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100_000)
+    return base64.urlsafe_b64encode(kdf.derive(password.encode()))
+
 
 def main():
-
+    
     if not os.path.exists("master.txt"):
         setup_master_password()
 
@@ -25,7 +33,6 @@ def main():
                 sys.exit("Maximum number of attempts has been exhausted.")
         else:
             break
-        
 
     while True:
         try:
@@ -71,88 +78,91 @@ Which option would you like to choose:  """))
 
 def setup_master_password():
     pw = input("Create a master password: ")
+    salt = os.urandom(16)
     hashed = hashlib.sha256(pw.encode()).hexdigest()
     with open("master.txt", "w") as f:
-        f.write(hashed)
+        f.write(hashed + "\n" + salt.hex())
+
 
 def check_master_password():
+    global FERNET
     with open("master.txt", "r") as f:
-        stored_hash = f.read().strip()
+        stored_hash, salt_hex = f.read().strip().split("\n")
+    salt = bytes.fromhex(salt_hex)
 
     attempt = input("Enter master password: ")
     attempt_hash = hashlib.sha256(attempt.encode()).hexdigest()
 
-    return attempt_hash == stored_hash
+    if attempt_hash == stored_hash:
+        FERNET = Fernet(derive_key(attempt, salt))
+        return True
+    return False
 
-    
+
+def load_rows():
+    """Decrypts passwords.csv and returns its rows as a list of dicts."""
+    if not os.path.exists("passwords.csv"):
+        return []
+    with open("passwords.csv", "rb") as f:
+        encrypted = f.read()
+    if not encrypted:
+        return []
+    decrypted = FERNET.decrypt(encrypted).decode()
+    reader = csv.DictReader(io.StringIO(decrypted))
+    return list(reader)
+
+
+def save_rows(rows):
+    """Writes rows back to passwords.csv, encrypted."""
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["site", "username", "password"])
+    writer.writeheader()
+    writer.writerows(rows)
+    encrypted = FERNET.encrypt(output.getvalue().encode())
+    with open("passwords.csv", "wb") as f:
+        f.write(encrypted)
+
+
 def add_entry(site, username, password):
     try:
-        with open("passwords.csv", newline="") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                if row["site"] == site:
-                    print("\nThis site already has a password, if you wish to update this password please first delete it.\n")
-                    return
-
-        with open("passwords.csv", "a", newline="") as file:
-            fieldnames = ["site", "username", "password"]
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            if file.tell() == 0:
-                writer.writeheader()
-            writer.writerow({'site': site, 'username': username, 'password': password})
+        rows = load_rows()
+        for row in rows:
+            if row["site"] == site:
+                print("\nThis site already has a password, if you wish to update this password please first delete it.\n")
+                return
+        rows.append({"site": site, "username": username, "password": password})
+        save_rows(rows)
         print("\nPassword added!\n")
-
-    except Exception as e:
+    except Exception:
         print("An error seems to have occured")
 
 
 def get_entry(site):
-    try:
-        with open("passwords.csv", newline = "") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                if row["site"] == site:
-                    print(row["password"])
-                    return
+    rows = load_rows()
+    for row in rows:
+        if row["site"] == site:
+            print(row["password"])
+            return
+    print("\nThis site is not in your list of passwords.\n")
 
-            print("\nThis site is not in your list of passwords.\n")
-    except FileNotFoundError:
-        print("\nThere is no passwords saved.\n")
 
 def delete_entry(site):
-    try:
-        with open("passwords.csv", newline = "") as file:
-            reader = csv.DictReader(file)
-            rows = list(reader)
-
-            for row in rows:
-                if row["site"] == site:
-                    rows = [row for row in rows if row["site"] != site]
-
-                    with open("passwords.csv", "w", newline="") as file:
-                        fieldnames = ["site", "username", "password"]
-                        writer = csv.DictWriter(file, fieldnames=fieldnames)
-
-                        writer.writeheader()
-                        writer.writerows(rows)
-                    print("\npassword deleted!\n")
-                    return
-                
-            print("\nThis site is not in your list of passwords.\n")
-    except FileNotFoundError:
-        print("\nThere is no passwords saved.\n")
+    rows = load_rows()
+    for row in rows:
+        if row["site"] == site:
+            rows = [r for r in rows if r["site"] != site]
+            save_rows(rows)
+            print("\npassword deleted!\n")
+            return
+    print("\nThis site is not in your list of passwords.\n")
 
 
 def list_entries():
-    try:
-        with open("passwords.csv") as file:
-            reader = csv.DictReader(file)
-            print(list(reader))
-    except FileNotFoundError:
-        print("\nThere is no passwords saved.\n")      
+    rows = load_rows()
+    print(rows)
 
 
-def generate_password(length = 16):
+def generate_password(length=16):
     alphabet = string.ascii_letters + string.digits
     while True:
         password = ''.join(secrets.choice(alphabet) for i in range(length))
@@ -161,7 +171,6 @@ def generate_password(length = 16):
                 and sum(c.isdigit() for c in password) >= 3):
             break
     return password
-
 
 
 if __name__ == "__main__":
