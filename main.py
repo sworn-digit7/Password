@@ -57,6 +57,9 @@ Which option would you like to choose:  """))
             elif option == 6:
                 break
 
+            else:
+                print("\nPlease choose options 1 to 6.\n")
+
         except ValueError:
             print("Please choose options 1 to 6.")
 
