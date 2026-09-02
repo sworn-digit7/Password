@@ -104,29 +104,36 @@ def get_entry(site):
         print("\nThere is no passwords saved.\n")
 
 def delete_entry(site):
-    with open("passwords.csv", newline = "") as file:
-        reader = csv.DictReader(file)
-        rows = list(reader)
+    try:
+        with open("passwords.csv", newline = "") as file:
+            reader = csv.DictReader(file)
+            rows = list(reader)
 
-        for row in rows:
-            if row["site"] == site:
-                rows = [row for row in rows if row["site"] != site]
+            for row in rows:
+                if row["site"] == site:
+                    rows = [row for row in rows if row["site"] != site]
 
-                with open("passwords.csv", "w", newline="") as file:
-                    fieldnames = ["site", "username", "password"]
-                    writer = csv.DictWriter(file, fieldnames=fieldnames)
+                    with open("passwords.csv", "w", newline="") as file:
+                        fieldnames = ["site", "username", "password"]
+                        writer = csv.DictWriter(file, fieldnames=fieldnames)
 
-                    writer.writeheader()
-                    writer.writerows(rows)
-                print("\npassword deleted!\n")
-                return
-            
-        print("\nThis site is not in your list of passwords.\n")
+                        writer.writeheader()
+                        writer.writerows(rows)
+                    print("\npassword deleted!\n")
+                    return
+                
+            print("\nThis site is not in your list of passwords.\n")
+    except FileNotFoundError:
+        print("\nThere is no passwords saved.\n")
+
 
 def list_entries():
-    with open("passwords.csv") as file:
-        reader = csv.DictReader(file)
-        print(list(reader))
+    try:
+        with open("passwords.csv") as file:
+            reader = csv.DictReader(file)
+            print(list(reader))
+    except FileNotFoundError:
+        print("\nThere is no passwords saved.\n")      
 
 
 def generate_password(length = 16):
