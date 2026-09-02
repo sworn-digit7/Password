@@ -4,6 +4,7 @@ import string
 import secrets
 import hashlib
 import os
+from cryptography.fernet import Fernet
 
 def main():
 
