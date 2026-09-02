@@ -1,4 +1,6 @@
 import csv
+import string
+import secrets
 
 def main():
     option = int(input("""Please choose one option:
@@ -28,9 +30,10 @@ Which option would you like to choose:  """))
         list_entries()
 
     elif option == 5:
-        generate_password()
-    
+        x = generate_password()
+        print(f"This is your randomly generated password: {x}")
 
+    
 def add_entry(site, username, password):
     with open("passwords.csv", "a", newline="") as file:
         fieldnames = ["site", "username", "password"]
@@ -46,26 +49,29 @@ def get_entry(site):
         for row in reader:
             if row["site"] == site:
                 print(row["password"])
-            else:
-                print("This site is not in your list of passwords.")
+                return
+
+        print("This site is not in your list of passwords.")
 
 def delete_entry(site):
     with open("passwords.csv", newline = "") as file:
         reader = csv.DictReader(file)
         rows = list(reader)
 
-        if site in rows:
-            rows = [row for row in rows if row["site"] != site]
+        for row in rows:
+            if row["site"] == site:
+                rows = [row for row in rows if row["site"] != site]
 
-            with open("passwords.csv", "w", newline="") as file:
-                fieldnames = ["site", "username", "password"]
-                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                with open("passwords.csv", "w", newline="") as file:
+                    fieldnames = ["site", "username", "password"]
+                    writer = csv.DictWriter(file, fieldnames=fieldnames)
 
-                writer.writeheader()
-                writer.writerows(rows)
-            print("password deleted!")
-        else:
-            print("This site is not in your list of passwords.")
+                    writer.writeheader()
+                    writer.writerows(rows)
+                print("password deleted!")
+                return
+            
+        print("This site is not in your list of passwords.")
 
 def list_entries():
     with open("passwords.csv") as file:
@@ -73,8 +79,15 @@ def list_entries():
         print(list(reader))
 
 
-def generate_password(length, use_symbols=True):
-    ...
+def generate_password(length = 16):
+    alphabet = string.ascii_letters + string.digits
+    while True:
+        password = ''.join(secrets.choice(alphabet) for i in range(length))
+        if (any(c.islower() for c in password)
+                and any(c.isupper() for c in password)
+                and sum(c.isdigit() for c in password) >= 3):
+            break
+    return password
 
 
 
