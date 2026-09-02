@@ -82,14 +82,22 @@ def check_master_password():
     
 def add_entry(site, username, password):
     try:
+        with open("passwords.csv", newline="") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row["site"] == site:
+                    print("\nThis site already has a password, if you wish to update this password please first delete it.\n")
+                    return
+
         with open("passwords.csv", "a", newline="") as file:
             fieldnames = ["site", "username", "password"]
-            writer = csv.DictWriter(file, fieldnames = fieldnames)
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
             if file.tell() == 0:
                 writer.writeheader()
             writer.writerow({'site': site, 'username': username, 'password': password})
         print("\nPassword added!\n")
-    except:
+
+    except Exception as e:
         print("An error seems to have occured")
 
 
